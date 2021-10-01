@@ -1,0 +1,1153 @@
+---
+title: "HTA.SCLC.figures.publication.010920"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+### This Rmarkdown reproduces Figures 4A, 2C, 3A-B, 3D-F, 4G-J, S4B-C, S2A, S2C-E, S3C 
+
+### FIGURE 4A
+```{r}
+library(stringr)
+library("ggplot2")
+library("dplyr")
+library('reshape2')
+#library(entropy)
+library(tidyr)
+library(plyr)
+library(entropy)
+library(ggrepel)
+library(RColorBrewer)
+library(pals)
+
+
+```
+
+
+```{r}
+
+
+hta_dir = '~/Documents_NotToICloud/MSKCC/Research/HTA/publication.010920/' #YOU WILL NEED TO CHANGE THIS PATH
+idir = paste0(hta_dir,'out.SCLC.010920/')
+
+ifile=paste0(idir,'obs.SCLC.010920.txt')
+
+### Can be downloaded at https://data.humantumoratlas.org/
+metadata_df = read.table(ifile,sep='\t', header=T, row.names = 'Cell')
+metadata_df$batch = as.character(metadata_df$batch)
+metadata_df$batch[grepl('RU1108',metadata_df$batch)] = 'RU1108a'
+
+metadata_df$subtype_uncertainty = apply(metadata_df[,c("pval_SCLC.A","pval_SCLC.N","pval_SCLC.P")], 1, function(x) entropy(x))
+
+any(is.nan(metadata_df$subtype_uncertainty)) #No NaNs produced
+
+```
+
+
+### FIGURE 2C
+```{r, fig.width=10, fig.height=9}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+fn = paste0(idir, 'cellphonedb.DE.homotypic_tumor.SCLC-A_vs_SCLC-N.txt')
+de_res_fisher = read.table(fn, sep = '\t', header=T)
+
+de_res_plot = data.frame(Gene = c(as.character(de_res_fisher$Gene),as.character(de_res_fisher$Gene)),
+                         freq = c(-1*de_res_fisher$freq_A, de_res_fisher$freq_N),
+                         pval = c(de_res_fisher$pval_A, de_res_fisher$pval_N))
+
+de_res_plot$logPval = -log2(de_res_plot$pval)
+
+top_thr=0.05
+idx = (de_res_plot$pval > top_thr)
+de_res_plot[idx, 'Gene'] = ''
+de_res_plot$Significance = 'Significant'
+de_res_plot[idx, 'Significance'] = 'Not significant'
+
+pos <- position_jitter(width = 0.05, height = 0.05, seed = 2)
+
+col = list(); col['Significant'] = 'darkred'; col['Not significant'] = 'grey'
+
+p = ggplot() + 
+  geom_jitter(data = de_res_plot, aes(freq,logPval, color=Significance), size = 2, position = pos) +
+  scale_color_manual(values = col) + theme_bw() +
+  theme(axis.title.x = element_text(size=16), axis.title.y = element_text(size=16), legend.text = element_text(size=16), legend.title = element_text(size=18),
+                                       panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  geom_text_repel(data = de_res_plot, aes(x=freq, y=logPval, label = Gene),
+                  box.padding = 0.5,size=3.8, show.legend = F, segment.color = "grey", position = pos, force = 5) +
+  geom_hline(yintercept = -log2(top_thr), linetype='dashed') +
+  xlab('Frequency') + ylab('-log p-value') 
+
+ggplot2:::print.ggplot(p)
+
+```
+
+
+### FIGURE 3A, 3B
+```{r}
+
+pt_tally = metadata_df %>% dplyr::select(clusters, patient) %>% table
+
+recurrence = sort(apply(pt_tally, 1, function(x) entropy(x))) #Recurrence score across patients
+
+plot_df = metadata_df %>% dplyr::select(clusters, subtype_uncertainty)
+plot_df$clusters = factor(plot_df$clusters, levels = names(recurrence))
+
+d=0.05
+plot_df2 = data.frame(x = 1:length(recurrence), y = -d, z = recurrence, w = d)
+
+g1 = plot_df %>% ggplot(aes(clusters,subtype_uncertainty)) + geom_boxplot(color = 'black', fill='darkorange2', outlier.size=-1) + xlab('Cluster') + ylab('Subtype uncertainty') + theme_bw() + 
+  theme(text = element_text(size=15), strip.text = element_text(size=25),axis.text.x = element_text(angle = 90, hjust = 1),
+                panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  coord_cartesian(ylim = c(-d,0.58))
+
+p = g1 + geom_tile(data = plot_df2,aes(x=x,y=y,fill = z, height=w), colour = "grey50") + scale_fill_gradient2("Recurrence\nAcross\nPatients", limits = c(0, max(recurrence)), 
+                        low = "#1B7837", mid = "white", high = "brown3") + 
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
+
+```
+
+
+```{r, fig.width = 16, fig.height = 6}
+
+pt_tally = metadata_df %>% dplyr::select(clusters, patient) %>% table
+
+H = apply(pt_tally, 1, function(x) entropy(x))
+
+pt_tally = data.frame(pt_tally/rowSums(pt_tally))
+
+pt_tally$clusters = factor(pt_tally$clusters, levels = order(H)-1)
+
+
+cols = kelly(length(unique(pt_tally$patient)))
+cols = c(cols[5:length(cols)], cols[1:4])
+
+p2 = pt_tally %>% ggplot(aes(x=clusters, y=Freq, fill=patient)) + geom_bar(stat='identity', color = 'black') + 
+  scale_fill_manual(values=cols) +
+  xlab('Cluster') + ylab('Sample Fraction') + theme_bw() +
+  theme(text = element_text(size=15), strip.text = element_text(size=25), axis.text.x = element_text(angle=90, vjust = 0.5, hjust=1),legend.position = 'none' ) 
+
+```
+
+
+```{r}
+
+library(cowplot)
+
+
+plot_grid(p + theme(legend.position = 'none'), p2, align = 'h', ncol=1)
+
+
+```
+
+
+
+
+```{r}
+#Significant difference in subtype uncertainty
+plot_df$condition = plot_df$clusters==22
+wilcox.test(subtype_uncertainty ~ condition, data=plot_df)
+
+```
+
+### FIGURE 3D
+```{r}
+library(RColorBrewer)
+library(scales)
+library(pals)
+
+```
+
+
+```{r, fig.width = 12, fig.height=12}
+
+plot_df = table(metadata_df[metadata_df$clusters ==  22,c('batch','SCLC_major_subtype_of_sample')]) %>% melt()
+plot_df = plot_df[plot_df$value!=0,]
+
+tx_df = metadata_df %>% dplyr::select(batch, treatment_categorized)
+tx_df = tx_df[!duplicated(tx_df$batch),]
+rownames(tx_df) = tx_df$batch
+
+plot_df$treatment = tx_df[plot_df$batch,'treatment_categorized']
+plot_df$treatment = gsub('TMZ.*', 'Later-line therapy', plot_df$treatment)
+plot_df$treatment = factor(plot_df$treatment, levels = c("Naive","ChemoIO_1L","Chemo_1L","Chemo_1L,IO_2L","Later-line therapy"))
+
+ts_df = metadata_df %>% dplyr::select(batch, tissue)
+ts_df = ts_df[!duplicated(ts_df$batch),]
+rownames(ts_df) = ts_df$batch
+
+plot_df$tissue = ts_df[as.character(plot_df$batch),'tissue']
+plot_df$tissue = factor(plot_df$tissue, levels = c("lung","LN","pleural_effusion","liver","adrenal_kidney", "axilla"))
+
+plot_df = plot_df %>% arrange(SCLC_major_subtype_of_sample, treatment, tissue, -value )
+
+# Compute percentages
+plot_df$fraction = plot_df$value / sum(plot_df$value)
+
+# Compute the cumulative percentages (top of each rectangle)
+plot_df$ymax = cumsum(plot_df$fraction)
+
+# Compute the bottom of each rectangle
+plot_df$ymin = c(0, head(plot_df$ymax, n=-1))
+plot_df$batch = factor(plot_df$batch, levels = (plot_df %>% arrange(-value))$batch)
+
+cols = hue_pal()(3)
+names(cols) = unique(plot_df$SCLC_major_subtype_of_sample)
+
+cols2 = cols25(length(unique(plot_df$batch)))
+names(cols2) = unique(plot_df$batch)
+
+cols3 = c('Naive' = 'gray', 'ChemoIO_1L' = 'mediumseagreen', 'Chemo_1L' = 'steelblue', 'Chemo_1L,IO_2L' = 'olivedrab3', 'Later-line therapy' = 'navajowhite2')
+
+cols5 = c('lung' = 'mediumorchid4', 'LN' = 'dodgerblue4', 'axilla' = 'green4', 'adrenal_kidney' = 'darkorange1', 'liver' = 'red3', 'pleural_effusion' = 'sienna4')
+
+p = ggplot(plot_df) +
+  geom_rect(aes(ymax=ymax, ymin=ymin, xmax=5, xmin=0), fill = cols2[plot_df$batch]) + 
+  geom_rect(aes(ymax=ymax, ymin=ymin, xmax=6, xmin=5.25, fill = treatment)) +
+  geom_rect(aes(ymax=ymax, ymin=ymin, xmax=7, xmin=6.25, color = tissue), fill = cols5[plot_df$tissue]) +
+  geom_rect(aes(ymax=ymax, ymin=ymin, xmax=8, xmin=7.25), color = cols[plot_df$SCLC_major_subtype_of_sample], fill = cols[plot_df$SCLC_major_subtype_of_sample]) +
+  scale_fill_manual('Treatment', values=as.vector(cols3), labels = names(cols3)) + 
+  scale_color_manual('Tissue', values = cols5, guide = guide_legend(override.aes = list(fill = cols5))) +
+  #scale_color_identity(guide = 'legend') + 
+  coord_polar(theta="y") + theme_bw() + theme(plot.title = element_text(hjust = 0.5), text = element_text(size=18),
+                                              axis.text = element_blank(),
+                                              axis.ticks = element_blank(),panel.border = element_blank(),
+                                              panel.grid  = element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank(), legend.position = 'right') +
+  ggtitle('Recurrent Cluster\nAcross Samples and Subtypes') + 
+  geom_text(size =5, aes(label=ifelse(fraction*100>5, sprintf('%s\n(%d)', gsub('_Frozen','',as.character(batch)), value), ''),
+                x=3.5,y=(ymin+ymax)/2))
+
+ggplot2:::print.ggplot(p)
+
+
+```
+
+
+### FIGURE 3E
+```{r}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+out_fn = paste0(idir, '/GSEA/GSEA.cluster22_vs_rest.filtered.csv')
+fgseaRes = read.table(out_fn, sep = '\t', header=T, row.names = 'pathway')
+
+hm_clust_gset = fgseaRes %>% dplyr::select(NES)
+
+mat = hm_clust_gset
+
+plot_df = data.frame(Pathway = rownames(mat), NES = mat)     
+plot_df = plot_df[plot_df$NES>0, ]
+plot_df = plot_df %>% arrange(NES)
+
+plot_df = plot_df %>% add_rownames('x')
+plot_df$x = factor(plot_df$x, levels=rev(plot_df$x))
+
+plot_df = plot_df[!grepl('TBK1|MIR34|NASOPHARYNGEAL|HEAD_AND_NECK',plot_df$Pathway),] #To remove extraneous pathways and recreate focused figure in paper
+plot_df$Pathway = gsub('LIAO_METASTASIS','LIAO_METASTASIS\n(SOX4-mediated)',plot_df$Pathway)
+plot_df$Pathway = gsub('CHANDRAN_METASTASIS_UP','CHANDRAN_METASTASIS_UP\n(FOXM1-mediated)',plot_df$Pathway)
+plot_df$Pathway = gsub('ZHANG_TLX_TARGETS_36HR_DN','ZHANG_TLX_TARGETS_36HR_DN\n(after TLX knockout in neural stem cells)',plot_df$Pathway)
+
+p = plot_df %>% ggplot(aes(y = x,x = NES)) + geom_bar(stat='identity', fill = 'darkorange2', color='black') +
+  scale_y_discrete(labels= rev(plot_df$Pathway)) +
+  ylab('') + 
+  theme_bw() + theme(text = element_text(size=12),panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  coord_cartesian(xlim=c(1.1,1.38)) 
+
+ggplot2:::print.ggplot(p)
+
+```
+
+### FIGURE 3F
+```{r}
+library(metap)
+library(ggrepel)
+```
+
+```{r}
+
+#Samples that have a cluster with >10% of cells from the PLCG2-high subclone
+clust_interest = c(
+  'RU1065C' = 2,
+  'RU1195A' = 4,
+  'RU779D' = 4,
+  'RU1124A_LN' = 5,
+  'RU1181B' = 9,
+  'RU426B' = 10,
+  'RU1215' = 11
+)
+
+```
+
+
+```{r}
+
+main_dir = '/Users/chanj3/Documents_NotToICloud/MSKCC/Research/HTA/publication.010920/out.SCLC.010920/MAST/MAST.individual/'
+
+df_all = NULL
+for (sample in names(clust_interest)) {
+  deg_fn = paste0(main_dir, sample, sprintf('/MAST.clusters_phenographLV/clusters_phenographLV.%d.csv', clust_interest[sample]))
+  deg_df = read.table(deg_fn, sep = ',', header = T) ### Can be downloaded at https://data.humantumoratlas.org/
+  deg_df$fdr[deg_df$coef<0] = 1
+  deg_df2 = deg_df %>% dplyr::select(primerid, fdr) 
+  tmp = colnames(deg_df2)
+  tmp[length(tmp)] = sample
+  colnames(deg_df2) = tmp
+  if (is.null(df_all))
+    df_all = deg_df2
+  else
+    df_all = merge(df_all, deg_df2, all.x=T)
+}
+
+df_all[is.na(df_all)] = 1
+rownames(df_all) = df_all$primerid 
+df_all = df_all %>% dplyr::select(-primerid)
+
+```
+
+
+```{r, fig.width = 15, fig.height=10}
+
+comb_pval = apply(df_all, 1, function(x) sump(x)$p)
+
+comb_pval = sort(comb_pval)
+
+plot_df = data.frame(gene = names(comb_pval), pval = comb_pval)
+plot_df$rank = 1:nrow(plot_df) 
+plot_df$log_pval = -log2(plot_df$pval)
+plot_df$top = plot_df$rank != 1
+plot_df$top_label = plot_df$gene
+plot_df$top_label[20:nrow(plot_df)] = ''
+
+p = plot_df %>% ggplot(aes(x = rank,y = log_pval, label = top_label)) + geom_point(aes(color = top))  +
+  theme_bw() + xlab('Rank') + ylab('log2(combined p-value)')  +
+  geom_text_repel(segment.color = 'lightgray', segment.alpha= 0.5, max.overlaps = 20) +ggtitle('Recurrent DEGs in Clusters\nwith Discrepant Subtype') + 
+  theme(legend.position = 'none',panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+ggplot2:::print.ggplot(p)
+  
+```
+
+
+```{r}
+#Bonferroni adjusted p-value
+
+comb_fdr = pmin(1,comb_pval * length(comb_pval))
+names(comb_fdr) = names(comb_pval)
+
+res_comb = data.frame('FDR' = comb_fdr)
+sum(res_comb < 0.05)
+
+```
+
+### FIGURE 4G, 4H, S4B
+```{r}
+library('survminer')
+library('survival')
+library(ramify)
+
+```
+
+### MIBI PLCG2
+```{r}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+ref_dir = '~/Documents_NotToICloud/MSKCC/Research/HTA/MIBI/ref/TMA_annotations/'
+patient_df = read.csv(paste0(ref_dir, 'TMA_sample_annotations.with_OS_PLCG2.final.csv'), sep = ',', row.names=1)
+
+patient_df = patient_df %>% dplyr::select(OS.from.tissue.collection, Recurrence.censor..0...not.recurred.1...recurred., Vital.Status..0.Alive..1.Dead., Histology, Tissue.Stage, Site.of.tissue, Treated., ASCL1, NEUROD1)
+
+colnames(patient_df) = c('time', 'Recurrence_censor', 'status','Histology','Stage','Tissue','Treated','ASCL1','NEUROD1')
+
+plot_df = patient_df %>% dplyr::filter(Stage!='LS-SCLC' | !is.na(Recurrence_censor))
+plot_df = plot_df %>% dplyr::filter(Recurrence_censor==1 | Stage=='ES-SCLC') 
+
+### Can be downloaded at https://data.humantumoratlas.org/
+feature_df = read.csv(paste0(ref_dir, '../../out.MIBI.010920/sclc_mibi_sample_level_feature_cleaned_v2.csv'), sep = ',', row.names = 1)
+
+plot_df = plot_df[rownames(plot_df) %in% rownames(feature_df),]
+
+plot_df$PLCG2_percent = feature_df[rownames(plot_df), 'PLCG2....tumor.masked']
+plot_df$RRBP1_percent = log(feature_df[rownames(plot_df), 'RRBP1....tumor'])
+
+plot_df$NEUROD1 = factor(plot_df$NEUROD1)
+plot_df$NEUROD1_percent = factor(feature_df[rownames(plot_df), 'NEUROD1'])
+
+plot_df$Treatment = factor(gsub('yes','Y', gsub('no','N',plot_df$Treated) ))
+plot_df$Tissue[grepl('lung|upper|lower|middle',plot_df$Tissue)] = 'N'
+plot_df$Tissue[plot_df$Tissue != 'N'] = 'Y'
+plot_df$Tissue = factor(plot_df$Tissue)
+plot_df$Combined_Histology = factor(as.numeric(grepl('/',plot_df$Histology)))
+
+
+```
+
+
+```{r}
+
+res.cut <- surv_cutpoint(plot_df, time = "time", event = "status",
+   variables = c("PLCG2_percent"))
+
+```
+
+
+```{r}
+
+plot_df2 = plot_df
+thr = res.cut$cutpoint$cutpoint
+plot_df2$PLCG2_high = 'Y'
+plot_df2$PLCG2_high[plot_df2$PLCG2_percent <= thr] = 'N'
+plot_df2$status = factor(plot_df2$status)
+
+plot_df$PLCG2_high = plot_df2$PLCG2_high
+
+rho = cor(plot_df2$PLCG2_percent, plot_df2$time, method = 'spearman')
+
+g = plot_df2 %>% ggplot(aes(x=time, y=PLCG2_percent)) + 
+  geom_point(aes(shape = status, color=PLCG2_high), size = 3) + #fill = 'white', 
+  #geom_point(data = plot_df2 %>% dplyr::filter(Tissue == 'Y'), aes(x=time, y=PLCG2_percent, shape = status, fill=PLCG2_high), size = 3) +
+  #scale_shape_manual(values = c(21,22)) +
+  theme_bw() + xlab('OS (Months)') + ylab('% PLCG2+ Tumor Cells in each Sample') + 
+  labs(shape = 'Deceased', color='PLCG2\npositive') + geom_smooth(method=lm) +
+  theme(text = element_text(size=15), axis.title.x = element_text(size=15), axis.title.y = element_text(size=15),
+      panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.ticks.x = element_blank()) + geom_smooth(method=lm) + #+ scale_y_log10()
+  annotate("text", x=50, y=20, label = paste("r =", round(rho, 2)), size=10)
+
+g
+
+```
+
+
+```{r}
+### MIBI PLCG2+ as a dichotomous variable, without Adjustment
+km_model = coxph(Surv(time, status) ~ PLCG2_high, data = plot_df)
+stats = summary(km_model)$coef
+pval = round(stats[length(stats)],3)
+
+```
+
+
+
+```{r}
+
+km.fit <- survfit(Surv(time, status) ~ PLCG2_high, data = plot_df)
+km.surv <- ggsurvplot(km.fit, risk.table = TRUE, pval=T)
+km.surv
+
+```
+
+```{r}
+
+model3 = coxph(Surv(time, status) ~ PLCG2_high + Distant_Metastasis + Treated + NEUROD1, data = plot_df2,
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+plot(zph, var = 2)
+plot(zph, var = 3)
+plot(zph, var = 4)
+
+```
+
+
+```{r}
+
+### MIBI PLCG2+ as a dichotomous variable, adjusting for treatment, tissue, NEUROD1 status
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+
+```{r}
+### MIBI PLCG2+ as a continuous target variable without adjustment
+plot_df2 = plot_df %>% dplyr::rename(Distant_Metastasis=Tissue ) #Variant_Subtype=Subtype, 
+
+```
+
+
+```{r}
+
+model3 = coxph(Surv(time, status) ~ PLCG2_percent, data = plot_df2,
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+
+```
+
+
+```{r}
+
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+
+
+
+```{r}
+### MIBI PLCG2+ as a continuous target variable, adjusting for treatment, tissue, NEUROD1 status
+model3 = coxph(Surv(time, status) ~ PLCG2_percent + Treatment + Distant_Metastasis + NEUROD1, data = plot_df2, #Variant_Subtype + 
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+plot(zph, var = 2)
+plot(zph, var = 3)
+plot(zph, var = 4)
+
+```
+
+
+```{r}
+
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+### FIGURE 4I, 4J, S4C
+```{r}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+ref_dir = '~/Documents_NotToICloud/MSKCC/Research/HTA/publication.010920/out.SCLC.010920/survival/'
+patient_df = read.csv(paste0(ref_dir, 'survival_metadata.PLCG2-high_scseq.tableS18.txt'), sep = '\t')
+patient_df = patient_df[patient_df$Ever.ES.SCLC.=='YES',]
+
+```
+
+```{r}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+cell_df = read.table('~/Documents_NotToICloud/MSKCC/Research/HTA/SCLC.010920/out.SCLC.SCLCtype_deg.SCLC_only.010920/obs.SCLC.SCLCtype_deg.SCLC_only.010920.txt', sep ='\t', header = T)
+tmp = cell_df %>% dplyr::select(batch, treatment_mast)
+tmp$batch = gsub('RU1108.*', 'RU1108a', tmp$batch)
+tmp = tmp[!duplicated(tmp$batch),]
+
+tmp$treatment_mast = gsub('.*IO.*', 'ChemoIO_1L', tmp$treatment_mast)
+tmp$treatment_mast = gsub('.*TMZ.*', 'Chemo_1L', tmp$treatment_mast)
+
+rownames(tmp) = tmp$batch
+
+patient_df$Treatment_Type = tmp[patient_df$Lab.ID,'treatment_mast']
+
+```
+
+
+```{r}
+
+plot_df = data.frame(sample = patient_df$Lab.ID, time = patient_df$Overall.Survival..months.)
+plot_df$status = as.numeric(patient_df$Vital.Status == 'Deceased')
+plot_df$Subtype = factor(c('N','Y')[1+as.numeric(patient_df$SCLC.subtype != 'SCLC-A')])
+plot_df$Treatment = factor(c('N','Y')[1+as.numeric(patient_df$Treated.=='YES')])
+
+plot_df$Chemo_1L = factor(c('N','Y')[1+as.numeric(patient_df$Treatment_Type =='Chemo_1L')])
+plot_df$IO_ever = factor(c('N','Y')[1+as.numeric(patient_df$Treatment_Type =='ChemoIO_1L')])
+
+plot_df$Tissue = factor(c('N','Y')[1+as.numeric(!patient_df$Distant.Metastasis. == 'YES')])
+
+plot_df$Recurrent_Cluster_Percent_Sample = patient_df$Recurrent.Cluster....of.tumor.cells.
+
+res.cut <- surv_cutpoint(plot_df, time = "time", event = "status",
+   variables = c("Recurrent_Cluster_Percent_Sample"))
+
+plot_df$Recurrent_Cluster = factor(plot_df$Recurrent_Cluster_Percent_Sample > res.cut$cutpoint$cutpoint)
+  
+
+```
+
+
+```{r}
+
+plot_df$status = factor(plot_df$status)
+
+rho = cor(log(plot_df$Recurrent_Cluster_Percent_Sample), plot_df$time, method = 'spearman')
+
+cor.test(log(plot_df$Recurrent_Cluster_Percent_Sample), plot_df$time, method = 'spearman', exact = F)
+
+
+p = plot_df %>% dplyr::rename(`Recurrent\nCluster` = Recurrent_Cluster) %>% ggplot(aes(x=time, y=Recurrent_Cluster_Percent_Sample)) + geom_point(aes(shape = status, color = `Recurrent\nCluster`), size = 3) +
+  theme_bw() + xlab('OS') + ylab('% Recurrent Cluster in Each Tumor') + 
+  labs(shape = 'Deceased') +
+  theme(text = element_text(size=15), axis.title.x = element_text(size=15), axis.title.y = element_text(size=15),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + geom_smooth(method=lm) + scale_y_log10() + 
+  annotate("text", x=15, y=5, label = paste("r =", round(rho, 2)), size=10)
+
+p
+
+
+```
+
+
+```{r}
+### Kaplan Meier of Recurrent cluster as a dichotomous variable without adjustment
+
+plot_df$status = as.numeric(plot_df$status)
+
+km_model = coxph(Surv(time, status) ~ Recurrent_Cluster, data = plot_df)
+stats = summary(km_model)$coef
+pval = round(stats[length(stats)],3)
+
+```
+
+
+```{r}
+
+km.fit <- survfit(Surv(time, status) ~ Recurrent_Cluster, data = plot_df)
+km.surv <- ggsurvplot(km.fit, risk.table = TRUE, pval=T)
+km.surv
+
+```
+
+
+```{r}
+### Recurrent cluster as a dichotomous variable, adjusting subtype, tissue, treatment
+plot_df2 = plot_df %>% dplyr::rename(Treated = Treatment, Variant_Subtype=Subtype, Distant_Metastasis=Tissue )
+plot_df2$Log_Recurrent_Cluster_Percent_Sample = log2(plot_df2$Recurrent_Cluster_Percent_Sample)
+
+model3 = coxph(Surv(time, status) ~ Recurrent_Cluster + Chemo_1L + IO_ever + Variant_Subtype + Distant_Metastasis, data = plot_df2,
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+plot(zph, var = 2)
+plot(zph, var = 3)
+plot(zph, var = 4)
+
+```
+
+```{r}
+
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+
+```{r}
+### Recurrent cluster as continuous target variable, without adjusting for subtype, tissue, treatment
+
+model3 = coxph(Surv(time, status) ~ Log_Recurrent_Cluster_Percent_Sample, data = plot_df2,
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+
+```
+
+
+```{r}
+
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+
+```{r}
+### Recurrent cluster as continuous target variable, adjusting for subtype, tissue, treatment
+
+model3 = coxph(Surv(time, status) ~ Log_Recurrent_Cluster_Percent_Sample + Chemo_1L + IO_ever + Variant_Subtype + Distant_Metastasis, data = plot_df2,
+              control = coxph.control(iter.max = 21))
+
+zph = cox.zph(model3)
+par(mfrow = c(2,2))
+plot(zph, var = 1)
+plot(zph, var = 2)
+plot(zph, var = 3)
+plot(zph, var = 4)
+
+```
+
+
+```{r}
+
+g = ggforest(model3, data = plot_df2)
+g
+
+```
+
+
+
+### FIGURE S2A
+```{r}
+
+subtype_freq = metadata_df %>% dplyr::group_by(batch, SCLC_subtype) %>% dplyr::summarise(n=n()) %>% dplyr::mutate(freq = n/sum(n)) %>% 
+  dplyr::select(-n) %>% pivot_wider(names_from = SCLC_subtype, values_from = freq) 
+subtype_freq = as.data.frame(subtype_freq)
+subtype_freq[is.na(subtype_freq)] <- 0
+rownames(subtype_freq) = subtype_freq$batch
+batch = subtype_freq$batch
+subtype_freq = subtype_freq %>% dplyr::select(-batch)
+
+
+```
+
+
+```{r fig2, fig.height = 9, fig.width = 9}
+###Subtype Diversity and Frequency
+
+SCLCmajor = colnames(subtype_freq)[apply(subtype_freq,1,which.max)]
+names(SCLCmajor) = rownames(subtype_freq)
+
+subtype_diversity = sort(apply(as.matrix(subtype_freq), 1, entropy))
+
+plot_df0 = metadata_df %>% dplyr::select(c('batch','subtype_uncertainty'))
+colnames(plot_df0) = c('Sample','Uncertainty')
+plot_df0$SCLCtype_major = SCLCmajor[plot_df0$Sample]
+plot_df0$Sample = factor(plot_df0$Sample, levels = names(subtype_diversity))
+
+p0 = plot_df0%>% ggplot(aes(Sample,Uncertainty,fill=SCLCtype_major)) + geom_boxplot(outlier.size=-1) + xlab('SCLC subtype') + ylab('Subtype uncertainty') + theme_bw() + 
+  theme(text = element_text(size=15), strip.text = element_text(size=25),axis.text.x = element_text(angle = 90, hjust = 1)) +
+  guides(fill=guide_legend(title='Major\nSubclonal\nSubtype'))
+
+tally_df = metadata_df %>% dplyr::select(batch,SCLC_subtype)
+tally_df$batch = as.factor(tally_df$batch)
+tally_df$SCLC_subtype = as.factor(tally_df$SCLC_subtype)
+counts = tally_df %>% dplyr::group_by(batch, SCLC_subtype, .drop=F) %>% dplyr::summarise(n=n()) %>% dplyr::mutate(freq = n/sum(n)) %>% 
+  dplyr::select(-n) %>% pivot_wider(names_from = SCLC_subtype, values_from = freq) %>% dplyr::rename(Sample = batch)
+
+plot_df1 = counts %>% melt(id = 'Sample') %>% mutate(Population_Frequency = 'Frequency')
+plot_df1$SCLCmajor = SCLCmajor[as.character(plot_df1$Sample)]
+plot_df1$Sample = factor(plot_df1$Sample, levels = names(subtype_diversity))
+plot_df1$SCLCmajor = factor(plot_df1$SCLCmajor, levels = sort(unique(as.character(plot_df1$SCLCmajor))) )
+p1 = plot_df1 %>% ggplot(aes(Sample,value,fill=variable)) + geom_bar(position='fill', stat='identity') + 
+  xlab('Sample') + ylab('Population Fraction') + theme_bw() + theme(text = element_text(size=15), axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  labs(fill = 'Subtype')
+
+library(grid)
+grid.newpage()
+grid.draw(rbind(ggplotGrob(p0), ggplotGrob(p1), size = "last"))
+
+```
+
+
+
+### FIGURE S2C
+```{r}
+
+library(ComplexHeatmap)
+library(Matrix)
+library(circlize)
+library(viridis)
+
+```
+
+
+```{r}
+###READ IN METADATA
+
+tally_df = metadata_df %>% dplyr::select(batch,SCLC_subtype)
+tally_df$batch = as.factor(tally_df$batch)
+tally_df$SCLC_subtype = as.factor(tally_df$SCLC_subtype)
+counts = tally_df %>% dplyr::group_by(batch, SCLC_subtype, .drop=F) %>% dplyr::summarise(n=n()) %>% dplyr::mutate(freq = n/sum(n)) %>% 
+  dplyr::select(-n) %>% pivot_wider(names_from = SCLC_subtype, values_from = freq) 
+counts = as.data.frame(counts)
+rownames(counts) = counts$batch
+batch = counts$batch
+counts = counts %>% dplyr::select(-batch)
+colnames(counts) = gsub('limma_','',colnames(counts))
+
+SCLCmajor = colnames(counts)[apply(counts,1,which.max)]
+names(SCLCmajor) = rownames(counts)
+
+```
+
+
+```{r}
+###INTEGRATE RNA
+mat = read.table(paste0(hta_dir, 'out.SCLC.010920/imputed.norm_df.csv'), stringsAsFactors = F,sep = ',', header = T, row.names = 'Cell')
+bc = rownames(mat)
+g = colnames(mat)
+
+```
+
+
+```{r}
+#Get DEG
+
+deg_dir = '/Users/chanj3/Documents_NotToICloud/MSKCC/Research/HTA/publication.010920/out.SCLC.010920/MAST/MAST.SCLC_subtype/'
+
+deg_subtype_up = list()
+deg_subtype_dn = list()
+deg_fn = "SCLCtype_pval_clust_cell.SCLC-P.filtered.csv"
+# for (deg_fn in list.files(paste0(deg_dir, 'one_vs_rest'))) {
+  if (grepl('.filtered.csv',deg_fn)) {
+    subtype = strsplit(deg_fn,'\\.')[[1]][2]
+    deg_df = read.table(paste0(deg_dir,'one_vs_rest/', deg_fn), sep='\t', header=T, stringsAsFactors = F)
+    deg = (deg_df %>% dplyr::filter(coef > 0))$primerid
+    deg_subtype_up[[subtype]] = deg 
+    
+    deg = (deg_df %>% dplyr::filter(coef < 0))$primerid
+    deg_subtype_dn[[subtype]] = deg 
+    print(subtype)
+  }
+# }
+
+for (deg_fn in list.files(paste0(deg_dir, 'one_vs_two'))) {
+  if (grepl('.filtered.csv',deg_fn)) {
+    subtype0 = strsplit(deg_fn,'\\.')[[1]][2]
+    subtype = gsub('_vs_.*','', subtype0)
+    deg_df = read.table(paste0(deg_dir,'one_vs_two/', deg_fn), sep='\t', header=T, stringsAsFactors = F)
+    deg = (deg_df %>% dplyr::filter(coef > 0))$primerid
+    deg_subtype_up[[paste0(subtype, '.one_vs_two')]] = deg 
+
+    deg = (deg_df %>% dplyr::filter(coef < 0))$primerid
+    deg_subtype_dn[[paste0(subtype, '.one_vs_two')]] = deg 
+    
+    if (grepl('woRU1108', subtype0))
+      subtype = gsub('_.*_vs','', subtype0)
+    else
+      subtype = gsub('.*_vs_','', subtype0)
+    deg_df = read.table(paste0(deg_dir,'one_vs_two/', deg_fn), sep='\t', header=T, stringsAsFactors = F)
+    
+    deg = (deg_df %>% dplyr::filter(coef < 0))$primerid
+    deg_subtype_up[[paste0(subtype, '.one_vs_two')]] = deg 
+
+    deg = (deg_df %>% dplyr::filter(coef > 0))$primerid
+    deg_subtype_dn[[paste0(subtype, '.one_vs_two')]] = deg 
+    
+    print(subtype)
+  }
+}
+
+deg_all = unique(unlist(deg_subtype_up, recursive= F))
+
+```
+
+
+```{r}
+
+ind_g = g %in% deg_all
+ind_bc = bc %in% rownames(metadata_df)
+
+mat2 = as.matrix(mat[ind_bc,ind_g])
+
+rownames(mat2) = bc[ind_bc]
+colnames(mat2) = g[ind_g]
+mat2 = as.matrix(mat2)
+
+mat2 = apply(mat2,2,function (x) (x - mean(x))/sd(x))
+mat2 = t(mat2)
+
+```
+
+```{r}
+#Get genes of interest
+genes_interest = readLines(paste0(hta_dir,'out.SCLC.010920/deg.SCLCtype.interest.txt'))
+genes_marker = c('ASCL1','NEUROD1','NEUROD2','NEUROD4','NEUROD6','POU2F3')
+
+```
+
+
+```{r}
+
+ind_marker = rownames(mat2) %in% genes_marker
+ind_interest = (rownames(mat2) %in% genes_interest) & !ind_marker
+ind_genes_highlight = ind_interest + ind_marker*2
+length(ind_genes_highlight)
+```
+
+```{r}
+
+metadata_df2 = metadata_df[colnames(mat2),c('SCLC_subtype','patient')]
+colnames(metadata_df2) = c('SCLC subtype', 'Patient')
+
+plot_SCLCtype = metadata_df[colnames(mat2), 'SCLC_subtype']
+plot_SCLCtype[metadata_df2$Patient=='RU1108'] = 'TP53-wt/RB1-wt SCLC'
+
+```
+
+```{r}
+
+ind_subtype = rownames(mat2)
+for (subtype in c('SCLC-P','SCLC-N','SCLC-A')) {
+  tmp = deg_subtype_up[names(deg_subtype_up)[grepl(subtype,names(deg_subtype_up))]]
+  deg = unique(unlist(tmp, recursive = F))
+  ind_subtype[ind_subtype %in% deg] = subtype
+}
+
+```
+
+```{r}
+library("RColorBrewer")
+library(foreach)
+library(circlize)
+library(pals)
+library(scales)
+
+col_sclc_subtype = hue_pal()(3)
+names(col_sclc_subtype) = c('SCLC-A','SCLC-N', 'SCLC-P')
+
+col_patient = alphabet(length(unique(metadata_df$patient)))
+names(col_patient) = sort(unique(metadata_df$patient))
+
+col_list = list()
+col_list[['SCLC subtype']] = col_sclc_subtype
+col_list[['Patient']] = col_patient
+
+```
+
+
+```{r}
+
+mat3 = mat2
+metadata_df3 = metadata_df2
+plot_SCLCtype3 = plot_SCLCtype
+plot_SCLCtype3 = gsub("TP53-wt/RB1-wt SCLC","TP53/RB1-wt\nSCLC",plot_SCLCtype3 )
+ind_subtype3 = ind_subtype
+ind_genes_highlight3 = ind_genes_highlight
+ind_genes_highlight3 = c('DEG in single-cell','DEG of interest','Canonical TF')[1+ind_genes_highlight3]
+names(ind_genes_highlight3) = rownames(mat3)
+ind_genes_highlight3 = factor(ind_genes_highlight3)
+
+```
+
+```{r, fig.width=12, fig.height=12}
+ht_opt(
+    legend_title_gp = gpar(fontsize = 20), 
+    legend_labels_gp = gpar(fontsize = 14), 
+    heatmap_column_names_gp = gpar(fontsize = 14),
+    heatmap_column_title_gp = gpar(fontsize = 14),
+    heatmap_row_title_gp = gpar(fontsize = 14)
+)
+
+ha = HeatmapAnnotation(df = metadata_df2, 
+                   col = col_list,
+                   annotation_width=0.1)
+
+hm = Heatmap(mat3, name = "expression", 
+    col = colorRamp2(c(-1.5,0,1.5), c('blue2','white','red2')),
+    top_annotation = ha,
+    clustering_distance_rows = "pearson",
+    clustering_distance_columns = "pearson",
+    row_split = ind_subtype3,
+    column_split = gsub("TP53-wt/RB1-wt SCLC","TP53/RB1-wt\nSCLC",plot_SCLCtype ),
+    show_column_names = F, row_title = NULL, show_column_dend=T, show_row_dend=T) +
+rowAnnotation(link = anno_mark(at = which(names(ind_genes_highlight3) %in% genes_interest), 
+    labels = rownames(mat3)[names(ind_genes_highlight3) %in% genes_interest], 
+    labels_gp = gpar(fontsize = 12), padding = unit(1, "mm")))
+
+hm = draw(hm, padding = unit(c(2, 2, 10, 2), "mm")) #bottom, left, top, right paddings
+
+
+```
+
+
+
+### Figure S2D
+```{r}
+
+library(ggbeeswarm)
+
+tally_df = metadata_df %>% dplyr::select(batch,SCLC_subtype)
+tally_df$batch = as.factor(tally_df$batch)
+tally_df$SCLC_subtype = as.factor(tally_df$SCLC_subtype)
+counts = tally_df %>% dplyr::group_by(batch, SCLC_subtype, .drop = F) %>% dplyr::summarise(n=n()) %>% dplyr::mutate(freq = n/sum(n)) %>% 
+  dplyr::select(-n) %>% pivot_wider(names_from = SCLC_subtype, values_from = freq) 
+
+counts = as.data.frame(counts)
+rownames(counts) = counts$batch
+batch = counts$batch
+counts = counts %>% dplyr::select(-batch)
+
+
+```
+
+```{r}
+#Covariates => Tissue
+tissue_dict = metadata_df %>% dplyr::select(batch, tissue) %>% unique()
+rownames(tissue_dict) = tissue_dict$batch
+tissue_dict = tissue_dict %>% dplyr::select(-batch)
+
+tissue = as.character(metadata_df$tissue)
+tissue_unique = unique(unlist(lapply(unique(tissue), function(x) strsplit(x, ','))))
+
+covariates = data.frame(matrix(0,ncol=length(tissue_unique), nrow=nrow(counts)))
+colnames(covariates) = tissue_unique
+rownames(covariates) = rownames(counts)
+
+for (sample in rownames(counts)) {
+  i = as.character(tissue_dict[as.character(sample),])
+  ind = strsplit(i, ',')[[1]]
+  covariates[sample,ind] = 1
+}
+
+covariates$distant = rowSums( covariates %>% dplyr::select(c('pleural_effusion','axilla','adrenal_kidney','liver')))
+covariates = covariates %>% dplyr::select(-c('pleural_effusion','axilla','adrenal_kidney','liver'))
+colnames(covariates) = gsub(' ','_',colnames(covariates))
+
+```
+
+
+```{r}
+
+any(is.na(counts))
+
+tissue_plot_df = cbind(counts,metastasis = colnames(covariates)[apply(covariates,1,which.max)])
+tissue_plot_df$metastasis = factor(tissue_plot_df$metastasis, levels = c('lung','LN','distant')) %>% recode(lung='Lung',LN='LN',distant='Distant') 
+
+p = tissue_plot_df %>% melt(id.vars = 'metastasis') %>% ggplot(aes(x=metastasis,y=value,fill=variable, color=variable)) + geom_bar(position='fill', stat='identity') + xlab('Tissue Site') + ylab('Frequency') + theme_bw() + 
+  theme(text = element_text(size=13),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) + guides(fill=guide_legend(title="Subtype"))
+p
+
+```
+
+### FIGURE S2E
+```{r}
+
+### Can be downloaded at https://data.humantumoratlas.org/
+out_fn = paste0(idir, 'GSEA/GSEA.SCLC-A_vs_SCLC-N.filtered.csv')
+fgseaRes = read.table(out_fn, sep = '\t', header=T, row.names = 'pathway')
+
+hm_clust_gset = fgseaRes %>% dplyr::select(NES)
+
+mat = hm_clust_gset
+
+```
+
+```{r}
+
+
+path_groups = list()
+path_groups[['SCLC-A']] = list() 
+path_groups[['SCLC-A']][['Metabolism']] = c('KEGG_OXIDATIVE_PHOSPHORYLATION',
+                                            'REACTOME_TCA_CYCLE_AND_RESPIRATORY_ELECTRON_TRANSPORT',
+                                            'HALLMARK_FATTY_ACID_METABOLISM')
+
+path_groups[['SCLC-A']][['Cortex\nDevelopment']] = c(
+  'GO_CEREBRAL_CORTEX_NEURON_DIFFERENTIATION',
+  'VERHAAK_GLIOBLASTOMA_PRONEURAL'
+                                                       )
+
+path_groups[['SCLC-A']][['Cell cycle/\nDNA repair']] = c('HALLMARK_DNA_REPAIR',
+                                                       'REACTOME_SYNTHESIS_OF_DNA',
+                                                       'REACTOME_G1_S_TRANSITION',
+                                                       'REACTOME_S_PHASE',
+                                                       'HALLMARK_E2F_TARGETS',
+                                                       'REACTOME_CELL_CYCLE_MITOTIC')
+
+path_groups[['SCLC-N']][['Neuron/\nendoderm\ndevelopment']] = c('GO_REGULATION_OF_NEURON_PROJECTION_DEVELOPMENT',
+                                                         'MILI_PSEUDOPODIA_HAPTOTAXIS_UP',
+                                                        'GO_NEUROPEPTIDE_SIGNALING_PATHWAY',
+                                                        # 'GO_REGULATION_OF_AXONOGENESIS',
+                                                        'GO_NEUROPEPTIDE_RECEPTOR_ACTIVITY',
+                                                        'GO_REGULATION_OF_NEUROLOGICAL_SYSTEM_PROCESS',
+                                                        'GO_ENDODERM_FORMATION',
+                                                        'GO_ENDODERM_DEVELOPMENT',
+                                                        'LECTINpos_KRT5pos_BASAL'
+                                                        )
+
+path_groups[['SCLC-N ']][['EMT/\nMetastasis']] = c('GO_WOUND_HEALING',
+                                                 'RICKMAN_METASTASIS_UP',
+                                                 'MYOFIBROBLASTS_FIBROMYOCYTES_TRAVAGLINI',
+                                                 'GO_BRANCHING_MORPHOGENESIS_OF_AN_EPITHELIAL_TUBE',
+                                                 'HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION'
+                                                 )
+
+path_groups[['SCLC-N']][['Hypoxia/\nAngiogenesis']] = c('HALLMARK_HYPOXIA',
+                                                      'JIANG_HYPOXIA_NORMAL',
+                                                      'HALLMARK_ANGIOGENESIS')
+
+path_groups[['SCLC-N']][['Inflammation']] = c('HALLMARK_INFLAMMATORY_RESPONSE')
+
+path_groups[['SCLC-N']][['Signaling\npathways']] = c('GO_REGULATION_OF_BMP_SIGNALING_PATHWAY',
+                                                    'HALLMARK_TGF_BETA_SIGNALING',
+                                                    'HALLMARK_TNFA_SIGNALING_VIA_NFKB',
+                                                    'KEGG_JAK_STAT_SIGNALING_PATHWAY',
+                                                    'HALLMARK_IL2_STAT5_SIGNALING',
+                                                    'HALLMARK_IL6_JAK_STAT3_SIGNALING')
+
+path_groups[['SCLC-N']][['Epigenetic\nregulation']] = c('SENESE_HDAC3_TARGETS_UP',
+                                                       'SENESE_HDAC1_TARGETS_UP',
+                                                       'SHEN_SMARCA2_TARGETS_UP')
+
+path_groups_flat = gsub('[0-9]$','',gsub('SCLC-N ','SCLC-N',names(unlist(path_groups))))
+names(path_groups_flat) = do.call(c, unlist(path_groups, recursive=FALSE))
+path_groups_flat = factor(path_groups_flat)
+
+
+```
+
+```{r, fig.height = 12, fig.width = 15}
+
+plot_df = data.frame(NES = mat[names(path_groups_flat),'NES'],
+                     Pathway = names(path_groups_flat),
+                     Category = path_groups_flat,
+                     SCLC_subtype = c('SCLC-N','SCLC-A')[1+ (mat[names(path_groups_flat), 'NES'] > 0)])
+plot_df$Pathway = as.character(plot_df$Pathway)
+plot_df = plot_df %>% arrange(Category,-NES)
+plot_df$abs_NES = abs(plot_df$NES)
+
+cat_df = plot_df %>% dplyr::group_by(Category) %>% dplyr::summarize(max_NES = max(abs_NES), mode_SCLC_subtype = names(sort(table(SCLC_subtype)*-1))[1])
+cat_df[cat_df$mode_SCLC_subtype == 'SCLC-N', 'max_NES'] = cat_df[cat_df$mode_SCLC_subtype == 'SCLC-N', 'max_NES'] * -1
+cat_order = as.character((cat_df %>% arrange(-max_NES))$Category )
+plot_df$Category = factor(plot_df$Category, levels = cat_order)
+
+plot_df$Pathway = factor(plot_df$Pathway, levels = rev(plot_df$Pathway))
+plot_df$x = factor(rev(1:nrow(plot_df)))
+
+cat_labs = gsub('SCLC.[AN].','',plot_df$Category) 
+names(cat_labs) = plot_df$Category
+
+plot_df %>% ggplot(aes(y = Pathway,x = NES, fill = SCLC_subtype)) + geom_bar(stat='identity') +
+  facet_grid(Category ~ ., space = 'free_y', scales = 'free_y', switch = 'both', labeller = labeller(Category = cat_labs)) +
+  scale_fill_manual(values = c('SCLC-A'= '#F8766D', 'SCLC-N' = '#00BA38')) +
+  theme_bw() + ylab('Pathway') + theme(text = element_text(size=15))  +
+  theme(legend.position="none",
+        axis.title.x = element_text(size=16),
+        axis.title.y = element_blank(),axis.title.y.right = element_text(),
+        strip.text.y.left = element_text(angle = 0, size=16)) + #strip.placement = 'outside', 
+  labs(x = 'NES') + scale_x_reverse()
+
+
+```
+
+
+### FIGURE S3C
+```{r}
+library(ggstance)
+```
+
+
+```{r}
+
+corr_file = 'pearson.PLCG2-high_module.pathways.txt' 
+topcorr_file = 'pearson.PLCG2-high_module.pathways.top.txt'
+
+### Can be downloaded at https://data.humantumoratlas.org/
+corr_all = read.table(paste0(idir, corr_file), sep = '\t', header=T, row.names = 1, quote="")$rho
+
+thr = quantile(corr_all, .95)
+
+top_pathways = read.table(paste0(idir, topcorr_file), sep = '\t', header=T, row.names = 1)
+top_pathways = top_pathways %>% dplyr::rename(Correlation = rho) %>% dplyr::arrange(Correlation)
+top_pathways$top_label = rownames(top_pathways)
+top_pathways$top_label = factor(top_pathways$top_label, levels = top_pathways$top_label)
+
+top_pathways %>% ggplot(aes(y = top_label, x = Correlation)) + geom_barh(stat = 'identity', fill = 'black') + theme_bw() + ylab('') + 
+  theme(axis.text=element_text(size=10), axis.title=element_text(size=15)) + geom_vline(xintercept = thr, linetype = 'dashed', color = 'red', size=1)
+
+```
+
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
