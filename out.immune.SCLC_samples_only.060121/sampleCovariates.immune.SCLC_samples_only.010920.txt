@@ -1,0 +1,21 @@
+batch	treatment	tissue	subtype
+PleuralEffusion	TMZ	distant	SCLC-A
+RU1065C	Platinum Doublet,Immunotherapy	distant	SCLC-A
+RU1066	Naive	lung	SCLC-A
+RU1080C	Platinum Doublet,Immunotherapy	distant	SCLC-A
+RU1108a	TMZ	lung	SCLC-A
+RU1124A_LN	Platinum Doublet,Immunotherapy	LN	SCLC-A
+RU1144_LN	Platinum Doublet	LN	SCLC-A
+RU1144_T	Platinum Doublet	lung	SCLC-A
+RU1145	Naive	lung	SCLC-A
+RU1152	Naive	LN	SCLC-A
+RU1181C	Platinum Doublet	lung	SCLC-N
+RU1195A	Platinum Doublet,Immunotherapy	lung	SCLC-A
+RU1215	Naive	distant	SCLC-N
+RU1229A_Frozen	Naive	lung	SCLC-A
+RU1231A	Naive	LN	SCLC-N
+RU1293A	Platinum Doublet,Immunotherapy	distant	SCLC-N
+RU1311A_T_1	Platinum Doublet	lung	SCLC-A
+RU1322A_LN	Platinum Doublet,Immunotherapy	LN	SCLC-P
+RU426B	Naive	lung	SCLC-A
+RU779D	TMZ	distant	SCLC-N
