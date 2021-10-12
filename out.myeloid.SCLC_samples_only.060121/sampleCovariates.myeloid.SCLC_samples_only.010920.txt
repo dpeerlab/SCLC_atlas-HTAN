@@ -1,0 +1,21 @@
+batch	treatment	tissue
+PleuralEffusion	TMZ	distant
+RU1065C	Platinum Doublet,Immunotherapy	distant
+RU1066	Naive	lung
+RU1080C	Platinum Doublet,Immunotherapy	distant
+RU1108a	TMZ	lung
+RU1124A_LN	Platinum Doublet,Immunotherapy	LN
+RU1144_LN	Platinum Doublet	LN
+RU1144_T	Platinum Doublet	lung
+RU1145	Naive	lung
+RU1152	Naive	LN
+RU1181B	Platinum Doublet	LN
+RU1181C	Platinum Doublet	lung
+RU1195A	Platinum Doublet,Immunotherapy	lung
+RU1215	Naive	distant
+RU1229A_Frozen	Naive	lung
+RU1231A	Naive	LN
+RU1293A	Platinum Doublet,Immunotherapy	distant
+RU1311A_T_1	Platinum Doublet	lung
+RU426B	Naive	lung
+RU779D	TMZ	distant
