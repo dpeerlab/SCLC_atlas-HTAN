@@ -1,0 +1,41 @@
+"Table S14. Clinical characteristics and ASCL1/NEUROD1 positivity on immunohistochemistry for an independent SCLC cohort analyzed by Vectra and MIBI, Related to Figure 4, 5, 7, S4, S7"																																
+MIBI ID	Vectra ID	Initial Stage	Vital Status	Recurrence Status	Overall Survival Following Biopsy (months)	ASCL1 IHC positive	NEUROD1 IHC positive	Tissue Site	Prior therapies	Metastatic tissue?	Treated?																					
+MIBI 0	NA	ES-SCLC	1	NA	1.6	Yes	Yes	Left upper lobe	LDE225+cisplatin+etoposide; SC16LD6.5	No	Yes																					
+MIBI 1	Vectra_12	LS-SCLC	1	1	3.4	Yes	No	Left upper lobe		No	No																					
+MIBI 2	NA	LS-SCLC	1	1	13	Yes	Yes	Left supraclavicular lymph node		Yes	No																					
+MIBI 3	NA	LS-SCLC	0	0	51.8	NA	Yes	Right lower lobe		No	No																					
+MIBI 4	Vectra_8	LS-SCLC	1	1	18.2	Yes	No	Left upper lobe		No	No																					
+MIBI 5	NA	LS-SCLC	0	1	18.3	Yes	Yes	Right scalene lymph node	cisplatin+etoposide	Yes	Yes																					
+MIBI 6	NA	LS-SCLC	0	0	65	Yes	No	Right upper lobe		No	No																					
+MIBI 7	NA	ES-SCLC	1	NA	14.2	Yes	Yes	Left supraclavicular lymph node		Yes	No																					
+MIBI 8	NA	LS-SCLC	1	0	15.7	NA	No	Right upper lobe		No	No																					
+MIBI 9	NA	LS-SCLC	1	1	11.8	Yes	No	Left lower lobe		No	No																					
+MIBI 10	Vectra_11	LS-SCLC	1	1	38.5	Yes	Yes	Right lower lobe		No	No																					
+MIBI 11	NA	LS-SCLC	0	1	32.2	NA	No	Left upper lobe	carboplatin+etoposide	No	Yes																					
+MIBI 12	NA	LS-SCLC	1	1	22.5	No	No	Left upper lobe		No	No																					
+MIBI 13	Vectra_2	LS-SCLC	0	NA	1.2	Yes	No	Right lower lobe		No	No																					
+MIBI 14	NA	LS-SCLC	1	1	8.5	NA	NA	Left supraclavicular lymph node		Yes	No																					
+MIBI 15	Vectra_1	LS-SCLC	1	1	26.7	Yes	Yes	Right lower lobe		No	No																					
+MIBI 16	Vectra_4	LS-SCLC	1	1	62.6	Yes	Yes	Left upper lobe		No	No																					
+MIBI 17	NA	LS-SCLC	0	1	31.1	Yes	Yes	Right lower lobe		No	No																					
+MIBI 18	NA	LS-SCLC	0	0	57.8	NA	NA	Right lower lobe		No	No																					
+MIBI 19	NA	LS-SCLC	1	1	14.8	No	No	Left upper lobe		No	No																					
+MIBI 20	NA	LS-SCLC	1	0	31.4	NA	NA	Left upper lobe		No	No																					
+MIBI 21	Vectra_3	LS-SCLC	0	1	20	Yes	Yes	Right lower lobe		No	No																					
+MIBI 22	NA	LS-SCLC	0	0	23.3	Yes	Yes	Right lower lobe		No	No																					
+MIBI 23	NA	ES-SCLC	1	NA	14.6	Yes	Yes	Left occipital brain tumor		Yes	No																					
+MIBI 24	NA	LS-SCLC	0	1	32.2	Yes	Yes	Right lung	cisplatin+etoposide; carboplatin+etoposide	No	Yes																					
+MIBI 25	NA	LS-SCLC	0	0	112.9	NA	NA	Left lower lobe		No	No																					
+MIBI 26	NA	ES-SCLC	0	NA	1	Yes	Yes	Subcutaneous abdomen nodule		Yes	No																					
+MIBI 27	Vectra_7	LS-SCLC	0	1	15.8	Yes	No	Left upper lobe		No	No																					
+MIBI 28	NA	LS-SCLC	0	0	48.3	Yes	No	Left upper lobe		No	No																					
+MIBI 29	NA	LS-SCLC	1	1	45.8	No	Yes	Right upper lobe		No	No																					
+MIBI 30	NA	LS-SCLC	1	1	9.0	No	No	Right upper lobe		No	No																					
+MIBI 31	NA	LS-SCLC	1	0	51.1	Yes	No	Right middle lobe		No	No																					
+MIBI 32	NA	LS-SCLC	0	1	72.2	Yes	Yes	Left upper lobe	cisplatin+etoposide; cisplatin+etoposide (rechallenge)	No	Yes																					
+MIBI 33	NA	LS-SCLC	1	1	20.5	Yes	Yes	Left upper lobe		No	No																					
+MIBI 34	Vectra_9	LS-SCLC	1	1	25.2	Yes	Yes	Right middle lobe		No	No																					
+MIBI 35	Vectra_6	LS-SCLC	1	1	19.7	Yes	Yes	Left lung (lingula)		No	No																					
+MIBI 36	NA	LS-SCLC	1	1	21.2	Yes	Yes	Left upper lobe		No	No																					
+	Vectra_10	LS-SCLC	0	NA	69.5	No	Yes	Right lower lobe		No	No																					
+	Vectra_5	LS-SCLC	0	NA	27.9	Yes	No	Right upper lobe		No	No																					
