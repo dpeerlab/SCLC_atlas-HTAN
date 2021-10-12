@@ -1,0 +1,20 @@
+Lab ID	Ever ES-SCLC?	Recurrent Cluster > 0.75%?	Recurrent Cluster (% of tumor cells)	Recurrent Cluster (% of cluster 22)	Collection Site Code	Vital Status	Overall Survival (months)	SCLC subtype	Tissue Site	Variant Subtype?	Distant Metastasis?	Treated?
+RU1195A	YES	YES	11.6	18.7	Primary tumor	Deceased	0.6	SCLC-A	Lung			YES
+RU779D	YES	YES	6.019	7.8	Liver metastasis	Deceased	4.4	SCLC-N	Liver	YES	YES	
+RU1065C	YES	YES	2.825	3	Liver metastasis	Deceased	1.1	SCLC-A	Liver		YES	YES
+RU426B	YES	YES	1.892	15.7	Primary tumor	Deceased	6.3	SCLC-A	Lung			
+RU1181B	YES	YES	1.409	16.9	Lymph node metastasis	Deceased	0.7	SCLC-N	Lymph Node	YES		YES
+RU1311A_T_1	YES	YES	1.379	1.2	Primary tumor	Alive	9.1	SCLC-A	Lung			YES
+PleuralEffusion	YES	YES	1.073	3.6	Pleural effusion metastasis	Deceased	1.7	SCLC-A	Lung Pleura		YES	YES
+RU1124A_LN	YES	YES	0.786	4.2	Lymph node metastasis	Deceased	2.1	SCLC-A	Lymph Node			YES
+RU1215	YES		0.535	12.7	Pleural effusion metastasis	Alive	6.3	SCLC-N	Lung Pleura	YES	YES	
+RU1229A_Frozen			0.32	6.6	Primary tumor	Alive	11	SCLC-A	Lung			
+RU1144_T	YES		0.249	1.8	Primary tumor	Alive	14.1	SCLC-A	Lung			YES
+RU1152	YES		0.202	1.8	Lymph node metastasis	Alive	16.6	SCLC-A	Lymph Node			
+RU1066			0.072	1.2	Primary tumor	Alive	14.5	SCLC-A	Lung			
+RU1293A	YES		0.035	1.2	Lymph node metastasis	Deceased	1.2	SCLC-N	Lymph Node	YES		YES
+RU1080C	YES		0.034	0	Kidney metastasis	Alive	6.8	SCLC-A	Kidney		YES	YES
+RU1322A_LN	YES		0.032	0.6	Lymph node metastasis	Alive	8.7	SCLC-P	Distant Lymph Node	YES	YES	YES
+RU1145			0.029	0.6	Primary tumor	Alive	16.4	SCLC-A	Lung			
+RU1231A			0.02	0.6	Lymph node metastasis	Alive	8.1	SCLC-N	Lymph Node	YES		
+RU1108a	YES		0.018	1.2	Primary tumor	Alive	19	SCLC-A	Lung			YES
