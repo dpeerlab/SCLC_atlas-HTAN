@@ -1,0 +1,21 @@
+Lab ID new	treatment	histology_subtype	tissue
+RU1195A	Platinum Doublet,Immunotherapy	SCLC-A	lung
+RU426B	Naive	SCLC-A	lung
+RU1215	Naive	SCLC-N	distant
+RU779D	TMZ	SCLC-N	distant
+RU1229A_Frozen	Naive	SCLC-A	lung
+RU1181C	Platinum Doublet	SCLC-N	lung
+RU1124A_LN	Platinum Doublet,Immunotherapy	SCLC-A	LN
+PleuralEffusion	TMZ	SCLC-A	distant
+RU1065C	Platinum Doublet,Immunotherapy	SCLC-A	distant
+RU1144_T	Platinum Doublet	SCLC-A	lung
+RU1152	Naive	SCLC-A	LN
+RU1311A_T_1	Platinum Doublet	SCLC-A	lung
+RU1066	Naive	SCLC-A	lung
+RU1108a	TMZ	SCLC-A	lung
+RU1293A	Platinum Doublet,Immunotherapy	SCLC-N	distant
+RU1145	Naive	SCLC-A	lung
+RU1231A	Naive	SCLC-N	LN
+RU1322A_LN	Platinum Doublet,Immunotherapy	SCLC-P	LN
+RU1144_LN	Platinum Doublet	SCLC-A	LN
+RU1080C	Platinum Doublet,Immunotherapy	SCLC-A	distant
