@@ -1,0 +1,91 @@
+---
+title: "HTA.SCLC.Fig2C.publication.010920"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+### FIGURE 1F
+```{r}
+library(stringr)
+library("ggplot2")
+library("dplyr")
+library('reshape2')
+#library(entropy)
+library(tidyr)
+library(plyr)
+library(entropy)
+library(ggrepel)
+library(RColorBrewer)
+
+```
+
+
+```{r}
+
+hta_dir = '~/Documents_NotToICloud/MSKCC/Research/HTA/HTA.publication.060121/' #YOU WILL NEED TO CHANGE THIS PATH
+idir = paste0(hta_dir,'out.SCLC.060121/')
+
+ifile=paste0(idir,'obs.SCLC.010920.txt')
+
+metadata_df = read.table(ifile,sep='\t', header=T, row.names = 'Cell')
+
+metadata_df$batch = as.character(metadata_df$batch)
+metadata_df$batch[grepl('RU1108',metadata_df$batch)] = 'RU1108a'
+
+metadata_df$subtype_uncertainty = apply(metadata_df[,c("pval_SCLC.A","pval_SCLC.N","pval_SCLC.P")], 1, function(x) entropy(x))
+
+any(is.nan(metadata_df$subtype_uncertainty)) #No NaNs produced
+
+```
+
+```{r}
+###WARNING: RUNNING GGTERN WILL CAUSE ALL OTHER AXES FOR SUBSEQUENT GGPLOTS IN THE SAME SESSION TO DISAPPEAR. WOULD RECOMMEND RUNNING THIS CODE IN A DIFFERENT SESSION THAN THE REST OF THE ANALYSIS.
+library(ggtern)
+
+pval_df = metadata_df[,grepl('pval_SCLC.[ANP]',colnames(metadata_df))]
+sigma = 0.02
+pval_df = pval_df + sigma   #Allows jitter for better visualization
+colnames(pval_df) = gsub('pval_','',colnames(pval_df))
+
+pval_df = pval_df + cbind(rnorm(n = nrow(pval_df), mean = 0, sd = sigma), 
+                          rnorm(n = nrow(pval_df), mean = 0, sd = sigma),
+                          rnorm(n = nrow(pval_df), mean = 0, sd = sigma)) #Create jitter 
+
+pval_df = pval_df - apply(pval_df, 1, function(x) min(c(x,0)) )
+pval_df = pval_df/rowSums(pval_df)
+
+col = rgb(pval_df$SCLC.A, pval_df$SCLC.N, pval_df$SCLC.P)
+
+pval_gg = as.data.frame(cbind(pval_df, col))
+
+gplot <- ggtern(data = pval_gg, 
+               aes(y = SCLC.A, x = SCLC.N, z = SCLC.P, col=col),
+               aes(x,y,z)) +
+  geom_point(aes_string(col = 'col'), size=0.01) +
+  labs(y='SCLC-A', x='SCLC-N', z='SCLC-P') + 
+  scale_color_identity() + 
+  theme_bw() +
+  theme(tern.panel.mask.show = FALSE,
+        axis.title = element_text(size=21),
+        tern.axis.title.L = element_text(hjust = 0,vjust=1.8),
+        tern.axis.title.R = element_text(hjust = 1,vjust=1.8),
+        text = element_text(size=17))
+gplot
+
+```
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
