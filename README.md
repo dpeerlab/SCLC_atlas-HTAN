@@ -8,4 +8,4 @@ Important note: Level 3 data holding UMI counts matrices at the HTAN data portal
 
 
 
-![Abstract](fx1_lrg-2.jpg)
+![Abstract](./figure/fx1_lrg-2.jpg)
