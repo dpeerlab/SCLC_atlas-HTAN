@@ -19,7 +19,9 @@ adata = sc.read_h5ad(out_dir + 'adata.SCLC.010920.h5ad')
 INITIAL SUBTYPE SCORING
 '''
 
-SCLC_subtype_dir='/data/peer/chanj3/ref/bulk.SCLC/' ### CHANGE TO DIRECTORY HOLDING BULK DEG FOR SCLC SUBTYPE
+main_dir = sys.argv[1]
+
+SCLC_subtype_dir= main_dir + 'out.SCLC.060121/bulk_ref/' ### CHANGE TO DIRECTORY HOLDING BULK DEG FOR SCLC SUBTYPE
 
 ct_dict = {}
 for i in ['SCLC-A','SCLC-N','SCLC-P','SCLC-Y']:
