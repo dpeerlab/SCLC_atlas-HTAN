@@ -30,7 +30,7 @@ rownames(counts0) = bc$Cell
 colnames(counts0) = g$Gene
 counts0 = t(counts0)
 
-#READ IN METADATA (AVAILABLE ON HTAN DATA PORTAL)
+#READ IN METADATA (AVAILABLE IN LEVEL 4 OF THE HTAN DATA PORTAL)
 obs_df = read.table('/home/chanj3/data/HTA.combined.010920/out.mnnc.010920/obs.combined.010920.txt', sep ='\t', header=T)
 obs_df = obs_df %>% dplyr::select(batch, patient, histo, tissue)
 obs_df2 = obs_df[!duplicated(obs_df$batch),] %>% dplyr::arrange(batch)
@@ -63,14 +63,15 @@ for (i in unique(order_df$histo)) {
     merge.order2[[i]] = merge.order[tmp[!duplicated(tmp)]]
 }
 
-counts = counts0[hvg,]
-
+counts = log2(counts0[hvg,] + 0.1)
+                    
 batch = gsub('_[0-9]+$','',colnames(counts))
 
 counts_list = lapply(split(seq_along(batch), batch), function(m, ind) m[,ind], m=counts)[order(unique(batch))]
 
 counts_list = counts_list[batch_order]
 
+#PLEASE NOTE CAN TOGGLE COSINE NORMALIZATION TO ON, BUT THIS WAS NOT USED FOR THE SCLC ATLAS                     
 out = fastMNN(counts_list, batch = batch_order, k=knn, merge.order = merge.order, cos.norm=F, d = 50, get.variance=T)
 
 correct = reducedDims(out)$corrected
